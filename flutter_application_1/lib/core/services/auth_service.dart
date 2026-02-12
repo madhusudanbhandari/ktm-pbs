@@ -2,13 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const baseUrl = "http://10.0.2.2:5000/api/auth";
+  static const baseUrl = "http://localhost:5000/api/auth";
 
   static Future<bool> register({
     required String name,
     required String email,
     required String phone,
     required String password,
+    required String address,
     required String role,
   }) async {
     final res = await http.post(
@@ -19,6 +20,7 @@ class AuthService {
         "email": email,
         "phone": phone,
         "password": password,
+        "address": address,
         "role": role,
       }),
     );
