@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 import '../user/home_screen.dart';
@@ -16,17 +17,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   bool isAdmin = false;
 
-  void login() {
-    if (isAdmin) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AdminDashboard()),
-      );
+  void login() async {
+    final result = await AuthService.login(
+      emailController.text,
+      passwordController.text,
+    );
+
+    if (result != null) {
+      final role = result['role'];
+
+      if (role == "admin") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboard()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const UserHomeScreen()),
+        );
+      }
     } else {
-      Navigator.push(
+      ScaffoldMessenger.of(
         context,
-        MaterialPageRoute(builder: (_) => const UserHomeScreen()),
-      );
+      ).showSnackBar(const SnackBar(content: Text("Login failed")));
     }
   }
 
