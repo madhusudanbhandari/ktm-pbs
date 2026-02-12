@@ -65,15 +65,15 @@ class _LoginScreenState extends State<LoginScreen> {
               hint: "Password",
               isPassword: true,
             ),
-            Row(
-              children: [
-                Checkbox(
-                  value: isAdmin,
-                  onChanged: (v) => setState(() => isAdmin = v!),
-                ),
-                const Text("Login as Admin"),
-              ],
-            ),
+            // Row(
+            //   children: [
+            //     Checkbox(
+            //       value: isAdmin,
+            //       onChanged: (v) => setState(() => isAdmin = v!),
+            //     ),
+            //     const Text("Login as Admin"),
+            //   ],
+            // ),
             const SizedBox(height: 20),
             CustomButton(text: "Login", onPressed: login),
             const SizedBox(height: 20),
