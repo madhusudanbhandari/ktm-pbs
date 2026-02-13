@@ -14,7 +14,7 @@ class AuthService {
   }) async {
     try {
       final res = await http.post(
-        Uri.parse("http://localhost:5000/api/auth/register"),
+        Uri.parse("$baseUrl/register"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "name": name,
@@ -25,10 +25,11 @@ class AuthService {
           "role": role,
         }),
       );
-      print(res.body);
-      if (res.statusCode == 201) {
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
+        print("Error response: ${res.body}");
         return false;
       }
     } catch (e) {
