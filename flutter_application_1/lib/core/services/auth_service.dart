@@ -12,20 +12,29 @@ class AuthService {
     required String address,
     required String role,
   }) async {
-    final res = await http.post(
-      Uri.parse("$baseUrl/register"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "name": name,
-        "email": email,
-        "phone": phone,
-        "password": password,
-        "address": address,
-        "role": role,
-      }),
-    );
-
-    return res.statusCode == 200;
+    try {
+      final res = await http.post(
+        Uri.parse("http://localhost:5000/api/auth/register"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": name,
+          "email": email,
+          "phone": phone,
+          "password": password,
+          "address": address,
+          "role": role,
+        }),
+      );
+      print(res.body);
+      if (res.statusCode == 201) {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      print("Error: $e");
+      return false;
+    }
   }
 
   static Future<Map?> login(String email, String password) async {

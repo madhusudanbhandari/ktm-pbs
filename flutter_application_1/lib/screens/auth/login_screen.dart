@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/services/auth_service.dart';
 import 'package:flutter_application_1/screens/auth/register_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 import '../user/home_screen.dart';
@@ -19,29 +20,26 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isAdmin = false;
 
   void login() async {
-    final result = await AuthService.login(
+    final response = await AuthService.login(
       emailController.text,
       passwordController.text,
     );
+    if (response != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("token", response['token']);
+      await prefs.setString("role", response['role']);
 
-    if (result != null) {
-      final role = result['role'];
-
-      if (role == "admin") {
+      if (response['role'] == "admin") {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const AdminDashboard()),
+          MaterialPageRoute(builder: (_) => AdminDashboard()),
         );
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const UserHomeScreen()),
+          MaterialPageRoute(builder: (_) => UserHomeScreen()),
         );
       }
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Login failed")));
     }
   }
 
@@ -65,15 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
               hint: "Password",
               isPassword: true,
             ),
-            // Row(
-            //   children: [
-            //     Checkbox(
-            //       value: isAdmin,
-            //       onChanged: (v) => setState(() => isAdmin = v!),
-            //     ),
-            //     const Text("Login as Admin"),
-            //   ],
-            // ),
+
             const SizedBox(height: 20),
             CustomButton(text: "Login", onPressed: login),
             const SizedBox(height: 20),
