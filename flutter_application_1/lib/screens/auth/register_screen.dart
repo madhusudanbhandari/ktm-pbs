@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/auth/login_screen.dart';
 import '../../core/services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
@@ -176,17 +175,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              /// REGISTER BUTTON
-              SizedBox(
-                width: double.infinity,
-                child: loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: register,
-                        child: const Text("Register"),
-                      ),
-              ),
+              CustomButton(text: "Register", onPressed: register),
 
+              /// REGISTER BUTTON
+              // SizedBox(
+              //   width: double.infinity,
+              //   child: loading
+              //       ? const Center(child: CircularProgressIndicator())
+              //       : ElevatedButton(
+              //           onPressed: register,
+              //           child: const Text("Register"),
+              //         ),
+              // ),
               const SizedBox(height: 20),
             ],
           ),
