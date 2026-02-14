@@ -25,8 +25,12 @@ class AuthService {
           "role": role,
         }),
       );
+      print("Response status: ${res.statusCode}");
+      print("Response body: ${res.body}");
 
       if (res.statusCode == 200 || res.statusCode == 201) {
+        //return true;
+        print("Registration successful");
         return true;
       } else {
         print("Error response: ${res.body}");
