@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/user/map_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../auth/login_screen.dart';
 
@@ -129,7 +130,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     title: "Bus Routes",
                     color: Colors.green,
                     onTap: () {
-                      // TODO: Navigate to Route List Screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MapScreen()),
+                      );
                     },
                   ),
                   featureCard(
