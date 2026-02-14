@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/auth/login_screen.dart';
+//import 'package:flutter_application_1/screens/auth/splash_screen.dart';
 import 'core/theme/app_theme.dart';
-import 'screens/auth/login_screen.dart';
+//import 'screens/auth/login_screen.dart';
 
 void main() {
   runApp(const BusTrackingApp());
