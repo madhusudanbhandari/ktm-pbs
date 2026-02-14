@@ -12,86 +12,184 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
-  final passwordController = TextEditingController();
   final addressController = TextEditingController();
+  final passwordController = TextEditingController();
 
   String role = "user";
   bool loading = false;
 
-  void register() async {
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    addressController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> register() async {
+    if (!_formKey.currentState!.validate()) return;
+
     setState(() => loading = true);
 
-    final success = await AuthService.register(
-      name: nameController.text,
-      email: emailController.text,
-      phone: phoneController.text,
-      password: passwordController.text,
-      address: addressController.text,
+    final result = await AuthService.register(
+      name: nameController.text.trim(),
+      email: emailController.text.trim(),
+      phone: phoneController.text.trim(),
+      password: passwordController.text.trim(),
+      address: addressController.text.trim(),
       role: role,
     );
 
     setState(() => loading = false);
 
-    if (success) {
+    if (result) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Registration Successful")));
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => LoginScreen()),
-      );
+      ).showSnackBar(const SnackBar(content: Text("Registration successful")));
+      Navigator.pop(context); // back to login
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Registration Failed")));
+      ).showSnackBar(SnackBar(content: Text("Registration failed")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Register")),
+      appBar: AppBar(title: const Text("Create Account"), centerTitle: true),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
-          children: [
-            CustomTextField(controller: nameController, hint: "Full Name"),
-            const SizedBox(height: 15),
-            CustomTextField(controller: emailController, hint: "Email"),
-            const SizedBox(height: 15),
-            CustomTextField(controller: phoneController, hint: "Phone Number"),
-            const SizedBox(height: 15),
-            CustomTextField(controller: addressController, hint: "Address"),
-            const SizedBox(height: 10),
-            CustomTextField(
-              controller: passwordController,
-              hint: "Password",
-              isPassword: true,
-            ),
-            const SizedBox(height: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              const SizedBox(height: 20),
 
-            const Text("Register As"),
-            RadioListTile(
-              title: const Text("User"),
-              value: "user",
-              groupValue: role,
-              onChanged: (v) => setState(() => role = v!),
-            ),
-            RadioListTile(
-              title: const Text("Admin"),
-              value: "admin",
-              groupValue: role,
-              onChanged: (v) => setState(() => role = v!),
-            ),
+              /// FULL NAME
+              CustomTextField(
+                hint: "Full Name",
+                icon: Icons.person,
+                controller: nameController,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Full name is required";
+                  }
+                  if (value.length < 3) {
+                    return "Name must be at least 3 characters";
+                  }
+                  return null;
+                },
+              ),
 
-            const SizedBox(height: 20),
-            loading
-                ? const Center(child: CircularProgressIndicator())
-                : CustomButton(text: "Register", onPressed: register),
-          ],
+              /// EMAIL
+              CustomTextField(
+                hint: "Email",
+                icon: Icons.email,
+                controller: emailController,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Email is required";
+                  }
+                  if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                    return "Enter a valid email";
+                  }
+                  return null;
+                },
+              ),
+
+              /// PHONE
+              CustomTextField(
+                hint: "Phone Number",
+                icon: Icons.phone,
+                controller: phoneController,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Phone number is required";
+                  }
+                  if (!RegExp(r'^[0-9]{10}$').hasMatch(value)) {
+                    return "Enter a valid 10-digit phone number";
+                  }
+                  return null;
+                },
+              ),
+
+              /// ADDRESS
+              CustomTextField(
+                hint: "Address",
+                icon: Icons.location_on,
+                controller: addressController,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Address is required";
+                  }
+                  if (value.length < 5) {
+                    return "Address is too short";
+                  }
+                  return null;
+                },
+              ),
+
+              /// PASSWORD
+              CustomTextField(
+                hint: "Password",
+                icon: Icons.lock,
+                obscureText: true,
+                controller: passwordController,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Password is required";
+                  }
+                  if (value.length < 6) {
+                    return "Password must be at least 6 characters";
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 15),
+
+              /// ROLE SELECTION
+              const Text(
+                "Register As",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              RadioListTile(
+                title: const Text("User"),
+                value: "user",
+                groupValue: role,
+                onChanged: (v) => setState(() => role = v!),
+              ),
+              RadioListTile(
+                title: const Text("Admin"),
+                value: "admin",
+                groupValue: role,
+                onChanged: (v) => setState(() => role = v!),
+              ),
+
+              const SizedBox(height: 20),
+
+              /// REGISTER BUTTON
+              SizedBox(
+                width: double.infinity,
+                child: loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: register,
+                        child: const Text("Register"),
+                      ),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
