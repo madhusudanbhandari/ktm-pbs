@@ -19,7 +19,7 @@ class _MapScreenState extends State<MapScreen> {
   final LatLng kathmanduCenter = const LatLng(27.7172, 85.3240);
 
   // 🔴 Replace with your Google Maps API Key
-  final String googleApiKey = "YOUR_GOOGLE_MAPS_API_KEY";
+  final String googleApiKey = "AIzaSyA13IItfHeyDhyNQdsW4kEd-EqVB62CTR4";
 
   @override
   void initState() {
