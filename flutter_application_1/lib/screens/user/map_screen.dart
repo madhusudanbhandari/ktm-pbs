@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:http/http.dart' as http;
-import '../../core/services/route_services.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -14,91 +13,89 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? mapController;
-  Set<Polyline> polylines = {};
 
   final LatLng kathmanduCenter = const LatLng(27.7172, 85.3240);
 
-  // 🔴 Replace with your Google Maps API Key
-  final String googleApiKey = "AIzaSyA13IItfHeyDhyNQdsW4kEd-EqVB62CTR4";
+  Set<Polyline> polylines = {};
+  List routes = [];
+
+  final String baseUrl = "http://localhost:5000/api/routes";
 
   @override
   void initState() {
     super.initState();
-    loadRoutes();
+    fetchRoutes();
   }
 
-  /// Fetch road-following polyline from Google Directions API
-  Future<List<LatLng>> getRoadPolyline(
-    LatLng origin,
-    LatLng destination,
-  ) async {
-    final url =
-        "https://maps.googleapis.com/maps/api/directions/json?"
-        "origin=${origin.latitude},${origin.longitude}&"
-        "destination=${destination.latitude},${destination.longitude}&"
-        "mode=driving&key=$googleApiKey";
+  /// FETCH ROUTES FROM BACKEND
+  Future<void> fetchRoutes() async {
+    try {
+      final res = await http.get(Uri.parse(baseUrl));
+      final data = jsonDecode(res.body);
 
-    final response = await http.get(Uri.parse(url));
-    final data = json.decode(response.body);
+      setState(() {
+        routes = data;
+      });
 
-    if (data['routes'].isEmpty) return [];
+      drawAllRoutes();
+    } catch (e) {
+      print("Error fetching routes: $e");
+    }
+  }
 
-    String encodedPolyline = data['routes'][0]['overview_polyline']['points'];
-
+  /// DRAW REAL ROAD PATHS USING GOOGLE DIRECTIONS
+  Future<void> drawAllRoutes() async {
     PolylinePoints polylinePoints = PolylinePoints();
-    List<PointLatLng> decodedPoints = polylinePoints.decodePolyline(
-      encodedPolyline,
-    );
 
-    return decodedPoints
-        .map((point) => LatLng(point.latitude, point.longitude))
-        .toList();
-  }
+    for (int i = 0; i < routes.length; i++) {
+      List stops = routes[i]["stops"];
 
-  Future<void> loadRoutes() async {
-    final routes = await RouteServices.getRoutes();
-    Set<Polyline> routeLines = {};
+      for (int j = 0; j < stops.length - 1; j++) {
+        LatLng start = LatLng(stops[j]["lat"], stops[j]["lng"]);
+        LatLng end = LatLng(stops[j + 1]["lat"], stops[j + 1]["lng"]);
 
-    for (var route in routes) {
-      List<LatLng> fullPath = [];
-      List path = route['path'];
+        PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+          request: PolylineRequest(
+            origin: PointLatLng(start.latitude, start.longitude),
+            destination: PointLatLng(end.latitude, end.longitude),
+            mode: TravelMode.driving,
+          ),
+        );
 
-      // Generate realistic road path between each stop point
-      for (int i = 0; i < path.length - 1; i++) {
-        LatLng start = LatLng(path[i]['lat'], path[i]['lng']);
-        LatLng end = LatLng(path[i + 1]['lat'], path[i + 1]['lng']);
+        if (result.points.isNotEmpty) {
+          List<LatLng> routePoints = result.points
+              .map((p) => LatLng(p.latitude, p.longitude))
+              .toList();
 
-        List<LatLng> segment = await getRoadPolyline(start, end);
-
-        fullPath.addAll(segment);
+          polylines.add(
+            Polyline(
+              polylineId: PolylineId("route_$i$j"),
+              points: routePoints,
+              width: 5,
+            ),
+          );
+        }
       }
-
-      routeLines.add(
-        Polyline(
-          polylineId: PolylineId(route['_id']),
-          points: fullPath,
-          width: 6,
-          color: Colors.blue,
-        ),
-      );
     }
 
-    setState(() {
-      polylines = routeLines;
-    });
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Bus Routes Map")),
+      appBar: AppBar(
+        title: const Text("Kathmandu Bus Routes"),
+        centerTitle: true,
+      ),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
           target: kathmanduCenter,
-          zoom: 13,
+          zoom: 13, // Full Kathmandu view
         ),
         polylines: polylines,
         myLocationEnabled: true,
+        zoomControlsEnabled: true,
         onMapCreated: (controller) {
           mapController = controller;
         },
