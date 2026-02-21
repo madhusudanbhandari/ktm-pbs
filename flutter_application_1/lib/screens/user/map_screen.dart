@@ -19,7 +19,11 @@ class _MapScreenState extends State<MapScreen> {
   Set<Polyline> polylines = {};
   List routes = [];
 
-  final String baseUrl = "http://localhost:5000/api/routes";
+  /// ⚠️ IMPORTANT: Your backend uses /api/route (NOT routes)
+  final String baseUrl = "http://localhost:5000/api/route";
+
+  /// 🔥 PUT YOUR GOOGLE MAPS API KEY HERE
+  final String googleApiKey = "YOUR_GOOGLE_MAPS_API_KEY";
 
   @override
   void initState() {
@@ -27,60 +31,88 @@ class _MapScreenState extends State<MapScreen> {
     fetchRoutes();
   }
 
-  /// FETCH ROUTES FROM BACKEND
+  /// ================= FETCH ROUTES FROM BACKEND =================
   Future<void> fetchRoutes() async {
     try {
       final res = await http.get(Uri.parse(baseUrl));
-      final data = jsonDecode(res.body);
 
-      setState(() {
-        routes = data;
-      });
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
 
-      drawAllRoutes();
+        setState(() {
+          routes = data;
+        });
+
+        /// 🔥 DRAW ALL ADMIN ROUTES AFTER FETCHING
+        await drawAllRoutes();
+      } else {
+        print("Failed to load routes: ${res.statusCode}");
+      }
     } catch (e) {
       print("Error fetching routes: $e");
     }
   }
 
-  /// DRAW REAL ROAD PATHS USING GOOGLE DIRECTIONS
+  /// ================= DRAW ALL ROUTES (REAL ROADS) =================
   Future<void> drawAllRoutes() async {
     PolylinePoints polylinePoints = PolylinePoints();
 
+    /// Clear old polylines
+    Set<Polyline> newPolylines = {};
+
     for (int i = 0; i < routes.length; i++) {
-      List stops = routes[i]["stops"];
+      try {
+        final route = routes[i];
 
-      for (int j = 0; j < stops.length - 1; j++) {
-        LatLng start = LatLng(stops[j]["lat"], stops[j]["lng"]);
-        LatLng end = LatLng(stops[j + 1]["lat"], stops[j + 1]["lng"]);
+        /// 🧠 EXPECTED BACKEND STRUCTURE:
+        /// {
+        ///   "startLat": 27.7,
+        ///   "startLng": 85.3,
+        ///   "endLat": 27.68,
+        ///   "endLng": 85.43
+        /// }
 
-        PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+        final double startLat = route['startLat'];
+        final double startLng = route['startLng'];
+        final double endLat = route['endLat'];
+        final double endLng = route['endLng'];
+
+        final result = await polylinePoints.getRouteBetweenCoordinates(
+          googleApiKey: googleApiKey,
           request: PolylineRequest(
-            origin: PointLatLng(start.latitude, start.longitude),
-            destination: PointLatLng(end.latitude, end.longitude),
+            origin: PointLatLng(startLat, startLng),
+            destination: PointLatLng(endLat, endLng),
             mode: TravelMode.driving,
           ),
         );
 
         if (result.points.isNotEmpty) {
-          List<LatLng> routePoints = result.points
-              .map((p) => LatLng(p.latitude, p.longitude))
+          List<LatLng> polylineCoordinates = result.points
+              .map((point) => LatLng(point.latitude, point.longitude))
               .toList();
 
-          polylines.add(
+          newPolylines.add(
             Polyline(
-              polylineId: PolylineId("route_$i$j"),
-              points: routePoints,
+              polylineId: PolylineId("route_$i"),
+              points: polylineCoordinates,
               width: 5,
+              geodesic: true,
             ),
           );
+        } else {
+          print("No route found for route index $i: ${result.errorMessage}");
         }
+      } catch (e) {
+        print("Error drawing route $i: $e");
       }
     }
 
-    setState(() {});
+    setState(() {
+      polylines = newPolylines;
+    });
   }
 
+  /// ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,7 +123,7 @@ class _MapScreenState extends State<MapScreen> {
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
           target: kathmanduCenter,
-          zoom: 13, // Full Kathmandu view
+          zoom: 13,
         ),
         polylines: polylines,
         myLocationEnabled: true,
